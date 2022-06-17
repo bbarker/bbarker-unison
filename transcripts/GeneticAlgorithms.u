@@ -1,0 +1,12 @@
+seed = 1
+
+
+--bar  = Random.splitmix 1234 runGeneration
+
+
+--popG10 = Random.splitmix seed '(runNgenerations runGeneration testProblem10items 3 (Left 30))
+--popG10 = Random.splitmix seed '(runNgenerations (Remote.pure.run 'runGeneration) testProblem10items 3 (Left 30))
+
+
+popG10 = Remote.pure.run '(Random.splitmix seed '(runNgenerations runGeneration testProblem10items 100 (Left 30)))
+> prettyPrintPop 10 testProblem10items popG10

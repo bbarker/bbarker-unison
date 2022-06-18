@@ -18,7 +18,7 @@ This is not a formal or complete classification!
 
 Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
 :-------------------------:|:-------------------------:
-![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg =400x)
+![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
 
 
 

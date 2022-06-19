@@ -2,6 +2,7 @@
 
 - Mention that this code is all checked and should be executable exactly as shown.
 - How genetic algorithsm relate to evolutionary algorithms.
+- Double check image credits
 
 # Introduction
 
@@ -16,9 +17,6 @@ This is not a formal or complete classification!
 ### Genetic Algorithms
 
 
-Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
-:-------------------------:|:-------------------------:
-![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
 
 
 
@@ -33,6 +31,123 @@ Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
   https://github.com/bbarker/uniopt.
 
 ```
+## Implementation of a simple Genetic Algorithm
+
+This GA is simple enough that it was implemented from the ground up.
+
+
+We start with some basic datatypes and functions.
+
+### Base Pairs
+
+```ucm
+.uniopt.evo.genetic> view BasePair
+
+  structural type BasePair = Numeric Float | Binary Boolean
+
+```
+In the future, `BasePair` may expand to include other types of data.
+In the example below, we only use binary data.
+
+Actual genetic sequences would be base 4 instead of base 2, but for our purposes,
+binary (base 2) is more convenient.
+
+
+For example, in the Knapsack example, we'll be using a `0` to denote the absence
+of an item, and `1` the presence of an item.
+
+
+## Changing the DNA
+
+### Mutation
+
+With mutation, during each generation, each "organism" will mutate zero or more
+of its basepairs. To keep things simple, we will cap this at one mutation:
+
+```ucm
+.uniopt.evo.genetic> view mutate
+
+  mutate : [BasePair] ->{Random} [BasePair]
+  mutate chromosome =
+    chromLength = List.size chromosome
+    randomIndex = Random.natIn 0 chromLength
+    chromOpt = modifyAt randomIndex mutateBasePair chromosome
+    match chromOpt with
+      Some chrom -> chrom
+      None       -> chromosome
+
+```
+We also need to implement `mutateBasePair`, which handles mutation for
+each component type of `BasePair`:
+
+
+```ucm
+.uniopt.evo.genetic> view mutateBasePair
+
+  mutateBasePair : BasePair ->{Random} BasePair
+  mutateBasePair = cases
+    Numeric _ -> Numeric !Random.float
+    Binary b  -> Binary (not b)
+
+```
+### Recombination and Crossover
+
+Recombination is the process of exchanging genetic material (DNA) between
+different organisms.
+
+We can think about this in terms of a specific type of recombination: chromosomal crosssover.
+
+
+
+Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
+:-------------------------:|:-------------------------:
+![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
+
+
+Unlike in natural chromosomal crossover, which is bound by physical limitations, we can allow
+crossing over at every base pair.
+
+```ucm
+.uniopt.evo.genetic> view crossoverUniform
+
+  crossoverUniform :
+    [BasePair] -> [BasePair] ->{Random} [BasePair]
+  crossoverUniform chrom1 chrom2 =
+    List.map
+      (bpbp -> (if !randomBool then at1 bpbp else at2 bpbp))
+      (List.zip chrom1 chrom2)
+
+```
+### Setting rates for Mutation and Crossover
+
+
+```ucm
+.uniopt.evo.genetic> view crossAndMutDefault
+
+  crossAndMutDefault :
+    Float
+    -> Float
+    -> ([BasePair], [BasePair])
+    ->{Random} [BasePair]
+  crossAndMutDefault crossRate mutRate ab =
+    a = at1 ab
+    b = at2 ab
+    zygote = withRate crossRate (crossoverUniform b) a
+    withRate mutRate mutate zygote
+
+.uniopt.evo.genetic> view withRate
+
+  withRate : Float -> (a ->{e} a) -> a ->{e, Random} a
+  withRate rate f a =
+    use Float <=
+    if !Random.float <= rate then f a else a
+
+```
+`withRate` is a helper function that allows us to apply a function
+(such as our mutation and crossover functions) at the specified rate
+to some input data.
+
+
 In the following, assume we're operating the KnapSack problem example namespace.
 
 
@@ -50,10 +165,9 @@ popG100 = Remote.pure.run '(Random.splitmix seed '(runNgenerations runGeneration
     ⍟ These new definitions are ok to `add`:
     
       popG100 : Either Failure [EntityFitness]
-        (also named uniopt.evo.genetic.ex.knapsack.popG100)
+        (also named ex.knapsack.popG100)
       seed    : Nat
-        (also named uniopt.evo.genetic.ex.knapsack.seed and
-        datetime.std.systemTimeTicksPerSecond)
+        (also named ex.knapsack.seed)
 
 ```
 ```unison

@@ -2,6 +2,7 @@
 
 - Mention that this code is all checked and should be executable exactly as shown.
 - How genetic algorithsm relate to evolutionary algorithms.
+- Double check image credits
 
 # Introduction
 
@@ -16,15 +17,90 @@ This is not a formal or complete classification!
 ### Genetic Algorithms
 
 
-Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
-:-------------------------:|:-------------------------:
-![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
 
 
 
 ```ucm
 .> pull https://github.com/bbarker/uniopt
 ```
+
+## Implementation of a simple Genetic Algorithm
+
+This GA is simple enough that it was implemented from the ground up.
+
+
+We start with some basic datatypes and functions.
+
+### Base Pairs
+
+```ucm
+.uniopt.evo.genetic> view BasePair
+```
+
+In the future, `BasePair` may expand to include other types of data.
+In the example below, we only use binary data.
+
+Actual genetic sequences would be base 4 instead of base 2, but for our purposes,
+binary (base 2) is more convenient.
+
+
+For example, in the Knapsack example, we'll be using a `0` to denote the absence
+of an item, and `1` the presence of an item.
+
+
+## Changing the DNA
+
+### Mutation
+
+With mutation, during each generation, each "organism" will mutate zero or more
+of its basepairs. To keep things simple, we will cap this at one mutation:
+
+```ucm
+.uniopt.evo.genetic> view mutate
+```
+
+We also need to implement `mutateBasePair`, which handles mutation for
+each component type of `BasePair`:
+
+
+```ucm
+.uniopt.evo.genetic> view mutateBasePair
+```
+
+### Recombination and Crossover
+
+Recombination is the process of exchanging genetic material (DNA) between
+different organisms.
+
+We can think about this in terms of a specific type of recombination: chromosomal crosssover.
+
+
+
+Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
+:-------------------------:|:-------------------------:
+![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
+
+
+Unlike in natural chromosomal crossover, which is bound by physical limitations, we can allow
+crossing over at every base pair.
+
+```ucm
+.uniopt.evo.genetic> view crossoverUniform
+```
+
+### Setting rates for Mutation and Crossover
+
+
+```ucm
+.uniopt.evo.genetic> view crossAndMutDefault
+.uniopt.evo.genetic> view withRate
+
+```
+
+`withRate` is a helper function that allows us to apply a function
+(such as our mutation and crossover functions) at the specified rate
+to some input data.
+
 
 In the following, assume we're operating the KnapSack problem example namespace.
 

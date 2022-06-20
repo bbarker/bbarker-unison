@@ -1,7 +1,7 @@
 # Prerequisites
 
 To experiment with this code, you can use the
-uniopt codebase:
+UniOpt codebase from the UCM:
 
 
 ```ucm
@@ -13,6 +13,10 @@ uniopt codebase:
   replaced instead of merging.
 
 ```
+The code is written as a
+[Unison transcript](https://www.unison-lang.org/learn/tooling/transcripts/),
+and is evaluated based on the most recent version of `UniOpt` stored on GitHub.
+
 # Introduction
 
 ## Optimization
@@ -25,8 +29,16 @@ This is not a formal or complete classification!
 
 ### Genetic Algorithms
 
+- The most common form of evolutionary algorithm (EA)
+- A sequence of "base pairs" (e.g. numbers) represent a
+solution to the problem
+- The "DNA" is genetically manipulated
+- Commonly used for optimization, compared to some other EAs.
+- ***Requires many function evaluations, which may be expensive***.
+- **A distributed variant would be ideal in this case**
 
-## An example problem: Knapsack Problem
+
+## An Example Problem: The Knapsack Problem
 
 You are going on a trip and can only bring items that you can
 fit into a knapsack, which has a specified weight limit.
@@ -225,7 +237,7 @@ We have a few use cases:
     3. #vj5isq0k81 testChromToItem
 
 ```
-## Changing the DNA (exploring the solution space)
+## Changing the DNA (Exploring the Solution Space)
 
 ## Mutation
 
@@ -286,7 +298,7 @@ crossing over at every base pair.
       (List.zip chrom1 chrom2)
 
 ```
-## Setting rates for Mutation and Crossover
+## Setting Rates for Mutation and Crossover
 
 
 ```ucm
@@ -446,6 +458,11 @@ To do this:
         <| sortBy fitness (Set.toList pastAndPresentPop))
 
 ```
+- Note also that we use the `Parallel` mode
+  - So if the fitness function is also parallel,
+    it can fork multiple Unison processes
+  - Semantics depend on the `Remote` ability handler being used.
+
 ## Generation Simulation for the KnapSack Problem
 
 To make sure we don't have surprising performance issues, let's
@@ -614,7 +631,9 @@ top10Lists = prettyPrintPop 10 testProblem10items popG100
       Item 58.53 9.21 ]) ]
 
 ```
-Before using the `Remote` ability, we could run our GA like this:
+**An aside**: before using the `Remote` ability, we could run our GA like this:
+
+**Another aside**: no `IO` was used in this code 😀.
 
 ```
 --popG10 = Random.splitmix seed '(runNgenerations runGeneration testProblem10items 3 (Left 30))
@@ -647,9 +666,3 @@ ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a461
 
 ```
 
-## TODO
-
-- Mention that this code is all checked and should be executable exactly as shown.
-- Section on conversion between Problem (domain) and GA
-- How genetic algorithms relate to evolutionary algorithms.
-- Double check image credits

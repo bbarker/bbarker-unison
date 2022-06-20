@@ -93,7 +93,45 @@ For example, in the Knapsack example, we'll be using a `0` to denote the absence
 of an item, and `1` the presence of an item.
 
 
-## Changing the DNA
+## Fitness
+
+We would like to pair evaluated fitnesses with their corresponding
+solutions whenever possible, so that we don't need to re-evaluate
+the fitness function unnecessarily:
+
+```ucm
+.uniopt.evo.genetic> view EntityFitness
+.uniopt.evo.genetic> view makeFitnessEvaluator
+```
+
+## Going between the Problem Domain and the GA Model
+
+First, we need a sensible fitness function:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view knapsackFitnessFn
+```
+
+Basically, the fitness if the sum of item values, unless
+the sum exceeds the limit, in which case the fitness is 0.
+
+
+After generating and evolving our chromosomes, we need a way
+to translate them back into the problem space:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view chromosomeToItems
+.uniopt.evo.genetic.ex.knapsack> view PossibleItemsRev
+```
+
+We have a few use cases:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents chromosomeToItems
+```
+
+
+## Changing the DNA (exploring the solution space)
 
 ## Mutation
 
@@ -186,7 +224,7 @@ To do this:
 .uniopt.evo.genetic> view iterateGenDefault
 ```
 
-## Generation simulation for the KnapSack Problem
+## Generation Simulation for the KnapSack Problem
 
 To make sure we don't have surprising performance issues, let's
 make sure we're only using our fitness function in one place:
@@ -204,12 +242,28 @@ we do not supply an existing population.
 ```
 
 
+## Running Multiple Generations
+
+There are various ways to encode stopping conditions.
+
+For example, we can just write a recursive function
+to run N generations:
+
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view runNgenerations
+```
+
 ## Optimizing the Knapsack Problem
 
 
 ```unison:hide
 seed = 1
 popG100 = Remote.pure.run '(Random.splitmix seed '(runNgenerations runGeneration testProblem10items 100 (Left 30)))
+```
+
+```ucm:hide
+.uniopt.evo.genetic.ex.knapsack> add popG100
 ```
 
 ```unison
@@ -248,9 +302,6 @@ Then use `transcript.fork` in subsequent runs:
 ```plain
 ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a46192092a18
 ```
-
-Eventually, if you want to save a new state, you can add the
-`--save-codebase` option to the above command.
 
 
 ## TODO

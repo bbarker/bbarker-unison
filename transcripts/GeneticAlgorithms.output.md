@@ -7,12 +7,10 @@ uniopt codebase:
 ```ucm
 .> pull https://github.com/bbarker/uniopt
 
-  Nothing changed as a result of the merge.
-
-  😶
+  ✅
   
-  the current namespace was already up-to-date with
-  https://github.com/bbarker/uniopt.
+  The destination the current namespace was empty, and was
+  replaced instead of merging.
 
 ```
 # Introduction
@@ -141,7 +139,93 @@ For example, in the Knapsack example, we'll be using a `0` to denote the absence
 of an item, and `1` the presence of an item.
 
 
-## Changing the DNA
+## Fitness
+
+We would like to pair evaluated fitnesses with their corresponding
+solutions whenever possible, so that we don't need to re-evaluate
+the fitness function unnecessarily:
+
+```ucm
+.uniopt.evo.genetic> view EntityFitness
+
+  unique type EntityFitness
+    = { chromosome : [BasePair], fitness : Float }
+
+.uniopt.evo.genetic> view makeFitnessEvaluator
+
+  makeFitnessEvaluator :
+    ([BasePair] ->{g} Float) -> [BasePair] ->{g} EntityFitness
+  makeFitnessEvaluator fitnessFn chromosome =
+    EntityFitness chromosome (fitnessFn chromosome)
+
+```
+## Going between the Problem Domain and the GA Model
+
+First, we need a sensible fitness function:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view knapsackFitnessFn
+
+  knapsackFitnessFn : KnapsackProblem -> [BasePair] -> Float
+  knapsackFitnessFn problem chromosome =
+    use Float >
+    use List map
+    use util sum
+    itemsInChrom =
+      chromosomeToItems (itemsRev problem) chromosome
+    itemsWeight = map Item.weight itemsInChrom |> sum
+    itemsValue = map Item.value itemsInChrom |> sum
+    if itemsWeight > capacity problem then 0.0 else itemsValue
+
+```
+Basically, the fitness if the sum of item values, unless
+the sum exceeds the limit, in which case the fitness is 0.
+
+
+After generating and evolving our chromosomes, we need a way
+to translate them back into the problem space:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view chromosomeToItems
+
+  chromosomeToItems : PossibleItemsRev -> [BasePair] -> [Item]
+  chromosomeToItems itemsRev chromosome =
+    use List map
+    bpsWithIx =
+      use Nat +
+      List.zip
+        chromosome (List.range 1 (1 + List.size chromosome))
+    bpIsOn : (BasePair, Nat) -> Optional Nat
+    bpIsOn bpix =
+      bp = at1 bpix
+      ix = at2 bpix
+      match bp with
+        Binary b -> if b then Some ix else None
+        _        -> None
+    onIxs = map bpIsOn bpsWithIx |> somes
+    let
+      (PossibleItemsRev rItemMap) = itemsRev
+      map (bp -> Map.get bp rItemMap) onIxs |> somes
+
+.uniopt.evo.genetic.ex.knapsack> view PossibleItemsRev
+
+  unique type PossibleItemsRev = PossibleItemsRev (Map Nat Item)
+
+```
+We have a few use cases:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents chromosomeToItems
+
+  Dependents of #69ihqud12r:
+  
+       Reference   Name
+    1. #g0ocp1iles knapsackFitnessFn
+    2. #rvkno0tq8o prettyPrintPopBase
+    3. #vj5isq0k81 testChromToItem
+
+```
+## Changing the DNA (exploring the solution space)
 
 ## Mutation
 
@@ -307,16 +391,16 @@ To do this:
     1. iterateGenDefault : Float
        -> Float
        -> ([BasePair] ->{g} Float)
-       -> ([EntityFitness] ->{Random} [EntityFitness])
-       -> [EntityFitness]
-       ->{g, Random} [EntityFitness]
+       -> ([#d8v7354nh6] ->{Random} [#d8v7354nh6])
+       -> [#d8v7354nh6]
+       ->{g, Random} [#d8v7354nh6]
        ↓
     2. iterateGenDefault : Float
        -> Float
        -> ([BasePair] -> Float)
-       -> ([EntityFitness] ->{Random} [EntityFitness])
-       -> [EntityFitness]
-       ->{Remote, Random} [EntityFitness]
+       -> ([#d8v7354nh6] ->{Random} [#d8v7354nh6])
+       -> [#d8v7354nh6]
+       ->{Remote, Random} [#d8v7354nh6]
 
 ```
 - Use the distribute package's `Seq` data structure in place of `List`:
@@ -362,7 +446,7 @@ To do this:
         <| sortBy fitness (Set.toList pastAndPresentPop))
 
 ```
-## Generation simulation for the KnapSack Problem
+## Generation Simulation for the KnapSack Problem
 
 To make sure we don't have surprising performance issues, let's
 make sure we're only using our fitness function in one place:
@@ -373,7 +457,7 @@ make sure we're only using our fitness function in one place:
   Dependents of #g0ocp1iles:
   
        Reference   Name
-    1. #t3s8t8k8es iterateGenKnapsack
+    1. #e27onun2k9 iterateGenKnapsack
 
 ```
 `iterateGenKnapsack` wraps the generic `iterateGen` function and supplies
@@ -402,6 +486,36 @@ we do not supply an existing population.
             fitnessEvaluator
             (randomPopulation (items problem) popSize)
     iterateGen fitnessFn selectionRandomWeightDefault pop
+
+```
+## Running Multiple Generations
+
+There are various ways to encode stopping conditions.
+
+For example, we can just write a recursive function
+to run N generations:
+
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view runNgenerations
+
+  runNgenerations :
+    (([BasePair] -> Float)
+    -> ([EntityFitness] ->{Random} [EntityFitness])
+    -> [EntityFitness]
+    ->{g, Random} [EntityFitness])
+    -> KnapsackProblem
+    -> Nat
+    -> Either Nat [EntityFitness]
+    ->{g, Random} [EntityFitness]
+  runNgenerations iterateGen problem nIter popOrSize =
+    use Nat ==
+    newPop = iterateGenKnapsack iterateGen problem popOrSize
+    if nIter == 0 then newPop
+    else
+      use Nat -
+      runNgenerations
+        iterateGen problem (nIter - 1) (Right newPop)
 
 ```
 ## Optimizing the Knapsack Problem
@@ -532,10 +646,6 @@ Then use `transcript.fork` in subsequent runs:
 ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a46192092a18
 
 ```
-
-Eventually, if you want to save a new state, you can add the
-`--save-codebase option to the above command.
-
 
 ## TODO
 

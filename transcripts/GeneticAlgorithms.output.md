@@ -1,23 +1,7 @@
-## TODO
+# Prerequisites
 
-- Mention that this code is all checked and should be executable exactly as shown.
-- How genetic algorithsm relate to evolutionary algorithms.
-- Double check image credits
-
-# Introduction
-
-## Optimization
-
-## Algorithms requiring Optimization
-
-## Types of Optimization algorithms
-
-This is not a formal or complete classification!
-
-### Genetic Algorithms
-
-
-
+To experiment with this code, you can use the
+uniopt codebase:
 
 
 ```ucm
@@ -31,14 +15,114 @@ This is not a formal or complete classification!
   https://github.com/bbarker/uniopt.
 
 ```
-## Implementation of a simple Genetic Algorithm
+# Introduction
+
+## Optimization
+
+## Algorithms requiring Optimization
+
+## Types of Optimization algorithms
+
+This is not a formal or complete classification!
+
+### Genetic Algorithms
+
+
+## An example problem: Knapsack Problem
+
+You are going on a trip and can only bring items that you can
+fit into a knapsack, which has a specified weight limit.
+Assuming volume constraints aren't an issue here - which items do you take?
+
+There are many approaches to solve this, including approaches that guarantee
+a global optimum; these methods tend to be specialized for the Knapsack problem,
+whereas GAs are much broader in scope.
+
+Regardless, we can use the Knapsack problem as an example.
+
+First, we model an `Item`, which has a weight and a value:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view Item
+
+  unique type Item = { weight : Float, value : Float }
+
+```
+We also need a way to keep track of all the items we are considering putting in our
+knapsack. We choose a `Map`, as well as a reversed variant of the `Map` for convenience
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view PossibleItems
+
+  unique type PossibleItems = PossibleItems (Map Item Nat)
+
+.uniopt.evo.genetic.ex.knapsack> view PossibleItemsRev
+
+  unique type PossibleItemsRev = PossibleItemsRev (Map Nat Item)
+
+```
+We create an entire problem description as a value of a structural type
+which includes possible items and the weight limit, and
+create a constructor to help us generate `PossibleItemsRev`:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view KnapsackProblem
+
+  structural type KnapsackProblem
+    = { items : PossibleItems,
+        itemsRev : PossibleItemsRev,
+        capacity : Float }
+
+.uniopt.evo.genetic.ex.knapsack> view makeKnapsackProblem
+
+  makeKnapsackProblem :
+    PossibleItems -> Float -> KnapsackProblem
+  makeKnapsackProblem items maxWeight =
+    KnapsackProblem items (revItems items) maxWeight
+
+```
+Let's see if we have any existing test data sets by checking the `dependents`
+of `makeKnapsackProblem`:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents makeKnapsackProblem
+
+  Dependents of #gsr3tq15pk:
+  
+       Reference   Name
+    1. #inubj94so9 testProblem10items
+
+```
+We do! Let's see how it is defined:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view testProblem10items
+
+  testProblem10items : KnapsackProblem
+  testProblem10items =
+    makeKnapsackProblem
+      (PossibleItems Map.empty
+        |> addItem (Item 4.06 9.89)
+        |> addItem (Item 81.68 5.0)
+        |> addItem (Item 65.16 1.18)
+        |> addItem (Item 96.47 8.49)
+        |> addItem (Item 7.2 1.31)
+        |> addItem (Item 58.53 9.21)
+        |> addItem (Item 29.47 7.66)
+        |> addItem (Item 40.3 0.86)
+        |> addItem (Item 53.67 8.15)
+        |> addItem (Item 82.96 0.31))
+      200.0
+
+```
+# Implementation of a simple Genetic Algorithm
 
 This GA is simple enough that it was implemented from the ground up.
 
 
 We start with some basic datatypes and functions.
 
-### Base Pairs
+## Base Pairs
 
 ```ucm
 .uniopt.evo.genetic> view BasePair
@@ -59,7 +143,7 @@ of an item, and `1` the presence of an item.
 
 ## Changing the DNA
 
-### Mutation
+## Mutation
 
 With mutation, during each generation, each "organism" will mutate zero or more
 of its basepairs. To keep things simple, we will cap this at one mutation:
@@ -90,7 +174,7 @@ each component type of `BasePair`:
     Binary b  -> Binary (not b)
 
 ```
-### Recombination and Crossover
+## Recombination and Crossover
 
 Recombination is the process of exchanging genetic material (DNA) between
 different organisms.
@@ -118,7 +202,7 @@ crossing over at every base pair.
       (List.zip chrom1 chrom2)
 
 ```
-### Setting rates for Mutation and Crossover
+## Setting rates for Mutation and Crossover
 
 
 ```ucm
@@ -148,7 +232,179 @@ crossing over at every base pair.
 to some input data.
 
 
-In the following, assume we're operating the KnapSack problem example namespace.
+## Selection
+
+Natural selection is a form of optimization, typically optimizing an organisms
+fitness for their environment.
+
+If the fitness is too low, there is a risk the organism will not pass on genetic
+material to future generations. Here we replicate that process:
+
+
+```ucm
+.uniopt.evo.genetic> view selectionRandomWeight
+
+  selectionRandomWeight :
+    Nat
+    -> Nat
+    -> Float
+    -> [EntityFitness]
+    ->{Random} [EntityFitness]
+  selectionRandomWeight
+    keepNBest totalKept inversePerturbationFactor currentPop =
+    use List map reverse take
+    sortedPop = reverse <| sortBy (ef -> fitness ef) currentPop
+    bestPop = take keepNBest sortedPop
+    restPop = List.drop keepNBest sortedPop
+    restKept =
+      use Nat -
+      Nat.max 0 (totalKept - keepNBest)
+    weights =
+      use Float /
+      map
+        (_ -> !Random.float / inversePerturbationFactor)
+        (List.range 0 restKept)
+    addWeightedFitness :
+      EntityFitness -> Float -> (EntityFitness, Float)
+    addWeightedFitness ef weight =
+      use Float +
+      (ef, fitness ef + weight)
+    perturbedEFs =
+      List.zipWith addWeightedFitness restPop weights
+    sortedPerturbedEFs = reverse <| sortBy at2 perturbedEFs
+    map at1 (take restKept sortedPerturbedEFs)
+
+.uniopt.evo.genetic> view selectionRandomWeightDefault
+
+  selectionRandomWeightDefault :
+    [EntityFitness] ->{Random} [EntityFitness]
+  selectionRandomWeightDefault population =
+    use Nat / max
+    popSize = List.size population
+    keepNBest = max 1 (popSize / 20)
+    totalKept = max 1 (popSize / 5)
+    selectionRandomWeight keepNBest totalKept 10.0 population
+
+```
+## Simulating a Single Generation
+
+We need to simulate a population evolving over multiple generations,
+so first we create a function to step from one generation to the next.
+
+
+This is where fitness evaluations occur, so we would like these evaluations
+to take advantage of a distributed system when available.
+
+To do this:
+
+- Add the `Remote` ability requirement
+
+```ucm
+.uniopt.evo.genetic> diff.namespace #bhro5l052t #mf909c2pu4
+
+  Updates:
+  
+    1. iterateGenDefault : Float
+       -> Float
+       -> ([BasePair] ->{g} Float)
+       -> ([EntityFitness] ->{Random} [EntityFitness])
+       -> [EntityFitness]
+       ->{g, Random} [EntityFitness]
+       ↓
+    2. iterateGenDefault : Float
+       -> Float
+       -> ([BasePair] -> Float)
+       -> ([EntityFitness] ->{Random} [EntityFitness])
+       -> [EntityFitness]
+       ->{Remote, Random} [EntityFitness]
+
+```
+- Use the distribute package's `Seq` data structure in place of `List`:
+
+```ucm
+.uniopt.evo.genetic> view iterateGenDefault
+
+  iterateGenDefault :
+    Float
+    -> Float
+    -> ([BasePair] -> Float)
+    -> ([EntityFitness] ->{Random} [EntityFitness])
+    -> [EntityFitness]
+    ->{Remote, Random} [EntityFitness]
+  iterateGenDefault
+    crossRate mutRate fitnessFn selectFn population =
+    use List size
+    selectedChromosomes =
+      List.map chromosome (selectFn population)
+    selectionSize = size selectedChromosomes
+    randomChromIx = '(Random.natIn 0 selectionSize)
+    randomChrom =
+      '(Optional.getOrElse
+          [] (List.at !randomChromIx selectedChromosomes))
+    chromPairs =
+      List.map
+        (_ -> (!randomChrom, !randomChrom))
+        (List.range 0 selectionSize)
+    crossAndMut = crossAndMutDefault crossRate mutRate
+    newPopChroms = List.map crossAndMut chromPairs
+    fitnessEvaluator = makeFitnessEvaluator fitnessFn
+    newEFs =
+      Seq.map
+        fitnessEvaluator (Seq.fromList Parallel newPopChroms)
+        |> Seq.toList
+    pastAndPresentPop =
+      use List ++
+      newEFs ++ population |> Set.fromList
+    popSize = size population
+    List.take
+      popSize
+      (List.reverse
+        <| sortBy fitness (Set.toList pastAndPresentPop))
+
+```
+## Generation simulation for the KnapSack Problem
+
+To make sure we don't have surprising performance issues, let's
+make sure we're only using our fitness function in one place:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents knapsackFitnessFn
+
+  Dependents of #g0ocp1iles:
+  
+       Reference   Name
+    1. #t3s8t8k8es iterateGenKnapsack
+
+```
+`iterateGenKnapsack` wraps the generic `iterateGen` function and supplies
+our custom fitness function, and will construct a random population if
+we do not supply an existing population.
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view iterateGenKnapsack
+
+  iterateGenKnapsack :
+    (([BasePair] -> Float)
+    ->{g} ([EntityFitness] ->{Random} [EntityFitness])
+    ->{g1} [EntityFitness]
+    ->{g2, Random} [EntityFitness])
+    -> KnapsackProblem
+    -> Either Nat [EntityFitness]
+    ->{g, g1, g2, Random} [EntityFitness]
+  iterateGenKnapsack iterateGen problem popOrSize =
+    fitnessFn = knapsackFitnessFn problem
+    fitnessEvaluator = makeFitnessEvaluator fitnessFn
+    pop =
+      match popOrSize with
+        Right pop    -> pop
+        Left popSize ->
+          List.map
+            fitnessEvaluator
+            (randomPopulation (items problem) popSize)
+    iterateGen fitnessFn selectionRandomWeightDefault pop
+
+```
+## Optimizing the Knapsack Problem
 
 
 ```unison
@@ -156,20 +412,6 @@ seed = 1
 popG100 = Remote.pure.run '(Random.splitmix seed '(runNgenerations runGeneration testProblem10items 100 (Left 30)))
 ```
 
-```ucm
-
-  I found and typechecked these definitions in scratch.u. If you
-  do an `add` or `update`, here's how your codebase would
-  change:
-  
-    ⍟ These new definitions are ok to `add`:
-    
-      popG100 : Either Failure [EntityFitness]
-        (also named ex.knapsack.popG100)
-      seed    : Nat
-        (also named ex.knapsack.seed)
-
-```
 ```unison
 top10Lists = prettyPrintPop 10 testProblem10items popG100
 ```
@@ -294,3 +536,10 @@ ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a461
 Eventually, if you want to save a new state, you can add the
 `--save-codebase option to the above command.
 
+
+## TODO
+
+- Mention that this code is all checked and should be executable exactly as shown.
+- Section on conversion between Problem (domain) and GA
+- How genetic algorithms relate to evolutionary algorithms.
+- Double check image credits

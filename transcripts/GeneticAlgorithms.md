@@ -1,9 +1,12 @@
-## TODO
+# Prerequisites
 
-- Mention that this code is all checked and should be executable exactly as shown.
-- How genetic algorithsm relate to evolutionary algorithms.
-- Double check image credits
+To experiment with this code, you can use the
+uniopt codebase:
 
+
+```ucm
+.> pull https://github.com/bbarker/uniopt
+```
 # Introduction
 
 ## Optimization
@@ -17,21 +20,63 @@ This is not a formal or complete classification!
 ### Genetic Algorithms
 
 
+## An example problem: Knapsack Problem
 
+You are going on a trip and can only bring items that you can
+fit into a knapsack, which has a specified weight limit.
+Assuming volume constraints aren't an issue here - which items do you take?
 
+There are many approaches to solve this, including approaches that guarantee
+a global optimum; these methods tend to be specialized for the Knapsack problem,
+whereas GAs are much broader in scope.
+
+Regardless, we can use the Knapsack problem as an example.
+
+First, we model an `Item`, which has a weight and a value:
 
 ```ucm
-.> pull https://github.com/bbarker/uniopt
+.uniopt.evo.genetic.ex.knapsack> view Item
 ```
 
-## Implementation of a simple Genetic Algorithm
+We also need a way to keep track of all the items we are considering putting in our
+knapsack. We choose a `Map`, as well as a reversed variant of the `Map` for convenience
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view PossibleItems
+.uniopt.evo.genetic.ex.knapsack> view PossibleItemsRev
+```
+
+We create an entire problem description as a value of a structural type
+which includes possible items and the weight limit, and
+create a constructor to help us generate `PossibleItemsRev`:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view KnapsackProblem
+.uniopt.evo.genetic.ex.knapsack> view makeKnapsackProblem
+```
+
+Let's see if we have any existing test data sets by checking the `dependents`
+of `makeKnapsackProblem`:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents makeKnapsackProblem
+```
+
+We do! Let's see how it is defined:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view testProblem10items
+```
+
+
+# Implementation of a simple Genetic Algorithm
 
 This GA is simple enough that it was implemented from the ground up.
 
 
 We start with some basic datatypes and functions.
 
-### Base Pairs
+## Base Pairs
 
 ```ucm
 .uniopt.evo.genetic> view BasePair
@@ -50,7 +95,7 @@ of an item, and `1` the presence of an item.
 
 ## Changing the DNA
 
-### Mutation
+## Mutation
 
 With mutation, during each generation, each "organism" will mutate zero or more
 of its basepairs. To keep things simple, we will cap this at one mutation:
@@ -67,7 +112,7 @@ each component type of `BasePair`:
 .uniopt.evo.genetic> view mutateBasePair
 ```
 
-### Recombination and Crossover
+## Recombination and Crossover
 
 Recombination is the process of exchanging genetic material (DNA) between
 different organisms.
@@ -88,7 +133,7 @@ crossing over at every base pair.
 .uniopt.evo.genetic> view crossoverUniform
 ```
 
-### Setting rates for Mutation and Crossover
+## Setting rates for Mutation and Crossover
 
 
 ```ucm
@@ -102,10 +147,67 @@ crossing over at every base pair.
 to some input data.
 
 
-In the following, assume we're operating the KnapSack problem example namespace.
+## Selection
+
+Natural selection is a form of optimization, typically optimizing an organisms
+fitness for their environment.
+
+If the fitness is too low, there is a risk the organism will not pass on genetic
+material to future generations. Here we replicate that process:
 
 
-```unison
+```ucm
+.uniopt.evo.genetic> view selectionRandomWeight
+.uniopt.evo.genetic> view selectionRandomWeightDefault
+```
+
+
+
+## Simulating a Single Generation
+
+We need to simulate a population evolving over multiple generations,
+so first we create a function to step from one generation to the next.
+
+
+This is where fitness evaluations occur, so we would like these evaluations
+to take advantage of a distributed system when available.
+
+To do this:
+
+- Add the `Remote` ability requirement
+
+```ucm
+.uniopt.evo.genetic> diff.namespace #bhro5l052t #mf909c2pu4
+```
+
+- Use the distribute package's `Seq` data structure in place of `List`:
+
+```ucm
+.uniopt.evo.genetic> view iterateGenDefault
+```
+
+## Generation simulation for the KnapSack Problem
+
+To make sure we don't have surprising performance issues, let's
+make sure we're only using our fitness function in one place:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> dependents knapsackFitnessFn
+```
+
+`iterateGenKnapsack` wraps the generic `iterateGen` function and supplies
+our custom fitness function, and will construct a random population if
+we do not supply an existing population.
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view iterateGenKnapsack
+```
+
+
+## Optimizing the Knapsack Problem
+
+
+```unison:hide
 seed = 1
 popG100 = Remote.pure.run '(Random.splitmix seed '(runNgenerations runGeneration testProblem10items 100 (Left 30)))
 ```
@@ -150,3 +252,10 @@ ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a461
 Eventually, if you want to save a new state, you can add the
 `--save-codebase` option to the above command.
 
+
+## TODO
+
+- Mention that this code is all checked and should be executable exactly as shown.
+- Section on conversion between Problem (domain) and GA
+- How genetic algorithms relate to evolutionary algorithms.
+- Double check image credits

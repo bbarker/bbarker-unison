@@ -35,9 +35,13 @@ solution to the problem
 
 ## An Example Problem: The Knapsack Problem
 
-You are going on a trip and can only bring items that you can
-fit into a knapsack, which has a specified weight limit.
-Assuming volume constraints aren't an issue here - which items do you take?
+- You are going on a trip.
+- You can only bring items that you can fit into a knapsack.
+- The knapsack has a weight limit.
+- Which items do you take?
+
+
+[![Depiction of the Knapsack Problem](/media/Knapsack.svg)](https://commons.wikimedia.org/wiki/File:Knapsack.svg)
 
 There are many approaches to solve this, including approaches that guarantee
 a global optimum; these methods tend to be specialized for the Knapsack problem,
@@ -174,7 +178,7 @@ We can think about this in terms of a specific type of recombination: chromosoma
 
 Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
 :-------------------------:|:-------------------------:
-![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)  |  ![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)
+[![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)](a "Image credit: Wikipedia")  |  [![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)](a "Image credit: Wikipedia")
 
 
 Unlike in natural chromosomal crossover, which is bound by physical limitations, we can allow
@@ -241,6 +245,12 @@ To do this:
   - So if the fitness function is also parallel,
     it can fork multiple Unison processes
   - Semantics depend on the `Remote` ability handler being used.
+
+We'll absorb the parameters in another function:
+
+```ucm
+.uniopt.evo.genetic.ex.knapsack> view runGeneration
+```
 
 ## Generation Simulation for the KnapSack Problem
 
@@ -314,12 +324,12 @@ ucm transcript --save-codebase transcripts/GeneticAlgorithms.md
 Get the location of the codebase from the output, e.g.:
 
 ```plain
-/tmp/transcript-23e6a46192092a18
+/tmp/transcript-bb600d0d425b1cd9
 ```
 
 Then use `transcript.fork` in subsequent runs:
 
 ```plain
-ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-23e6a46192092a18
+ucm transcript.fork transcripts/GeneticAlgorithms.md -c /tmp/transcript-bb600d0d425b1cd9
 ```
 

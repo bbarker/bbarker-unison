@@ -148,21 +148,24 @@ We start with some basic datatypes and functions.
   structural type BasePair = Numeric Float | Binary Boolean
 
 ```
-In the future, `BasePair` may expand to include other types of data.
-In the example below, we only use binary data.
+- In the future, `BasePair` may expand to include other types of data.
+- We could potentially use a typeclass once Unison supports them.
+- In the example below, we only need binary data.
 
 Actual genetic sequences would be base 4 instead of base 2, but for our purposes,
 binary (base 2) is more convenient.
 
-
-For example, in the Knapsack example, we'll be using a `0` to denote the absence
-of an item, and `1` the presence of an item.
+- In the Knapsack example:
+  -  a `0` to denote the absence
+of an item
+  - a `1` the presence of an item
 
 
 ## Fitness
 
-We would like to pair evaluated fitnesses with their corresponding
-solutions whenever possible, so that we don't need to re-evaluate
+- Pair evaluated fitnesses with their corresponding
+solutions
+  - we don't need to re-evaluate
 the fitness function unnecessarily:
 
 ```ucm
@@ -198,8 +201,8 @@ First, we need a sensible fitness function:
     if itemsWeight > capacity problem then 0.0 else itemsValue
 
 ```
-Basically, the fitness if the sum of item values, unless
-the sum exceeds the limit, in which case the fitness is 0.
+- The fitness is the sum of item values
+- ... Unless the sum of item weights exceeds the limit, then it is 0
 
 
 After generating and evolving our chromosomes, we need a way
@@ -249,8 +252,10 @@ We have a few use cases:
 
 ## Mutation
 
-With mutation, during each generation, each "organism" will mutate zero or more
-of its basepairs. To keep things simple, we will cap this at one mutation:
+- During each generation, each "organism" (chromosome):
+  - Will mutate zero or more of its basepairs
+      - To keep things simple, we will just perform one mutation
+      - Later we will specify the rate of mutation
 
 ```ucm
 .uniopt.evo.genetic> view mutate
@@ -280,20 +285,19 @@ each component type of `BasePair`:
 ```
 ## Recombination and Crossover
 
-Recombination is the process of exchanging genetic material (DNA) between
+- Recombination is the process of exchanging genetic material (DNA) between
 different organisms.
-
-We can think about this in terms of a specific type of recombination: chromosomal crosssover.
-
-
+- We can think about this in terms of a specific type of recombination: chromosomal crosssover.
 
 Chromosomal Crossover            |  (depiction by Thomas Hunt Morgan)
 :-------------------------:|:-------------------------:
 [![Depiction of chromosomal crossover, by Thomas Hunt Morgan](/media/Morgan_crossover_1.jpg)](a "Image credit: Wikipedia")  |  [![Thomas Hunt Morgan](/media/Thomas_Hunt_Morgan.jpg)](a "Image credit: Wikipedia")
 
 
-Unlike in natural chromosomal crossover, which is bound by physical limitations, we can allow
-crossing over at every base pair.
+- Natural chromosomal crossover is:
+  - bounded by physical limitations
+  - results in genetic linkage (T.H. Morgan)
+- Instead we can allow crossing over at every base pair.
 
 ```ucm
 .uniopt.evo.genetic> view crossoverUniform
@@ -331,18 +335,23 @@ crossing over at every base pair.
     if !Random.float <= rate then f a else a
 
 ```
-`withRate` is a helper function that allows us to apply a function
-(such as our mutation and crossover functions) at the specified rate
-to some input data.
+`withRate` is a helper function
+- allows us to apply a function at the specified rate to some input data
+- we use it for mutation and crossover functions
 
 
 ## Selection
 
-Natural selection is a form of optimization, typically optimizing an organisms
-fitness for their environment.
 
-If the fitness is too low, there is a risk the organism will not pass on genetic
-material to future generations. Here we replicate that process:
+- Natural selection acts as a filter in our optimization search:
+  - optimizes organisms' fitness for their environment
+  - If the fitness is too low:
+    - there is an increased risk the organism will not pass on genetic
+material to future generations.
+
+[![Photo of Charles Darwin, aged 51](/media/Charles_Darwin_aged_51.jpg)](https://en.wikipedia.org/wiki/Natural_selection#/media/File:Charles_Darwin_aged_51.jpg)
+
+Here we emulate natural selection:
 
 
 ```ucm
@@ -392,12 +401,10 @@ material to future generations. Here we replicate that process:
 ```
 ## Simulating a Single Generation
 
-We need to simulate a population evolving over multiple generations,
-so first we create a function to step from one generation to the next.
-
-
-This is where fitness evaluations occur, so we would like these evaluations
-to take advantage of a distributed system when available.
+- We need to simulate a population evolving over multiple generations
+- First we create a function to step from one generation to the next.
+- This is where fitness evaluations occur
+  - We would like these evaluations to take advantage of a distributed system when available.
 
 To do this:
 
@@ -424,6 +431,7 @@ To do this:
 
 ```
 - Use the distribute package's `Seq` data structure in place of `List`:
+  - We can do this internally, and still use `List` in the function signature.
 
 ```ucm
 .uniopt.evo.genetic> view iterateGenDefault
@@ -498,9 +506,10 @@ make sure we're only using our fitness function in one place:
     1. #e27onun2k9 iterateGenKnapsack
 
 ```
-`iterateGenKnapsack` wraps the generic `iterateGen` function and supplies
-our custom fitness function, and will construct a random population if
-we do not supply an existing population.
+`iterateGenKnapsack`:
+ - wraps the generic `iterateGen` function
+ - supplies our custom fitness function
+ - will construct a random population if we do not supply an existing population
 
 ```ucm
 .uniopt.evo.genetic.ex.knapsack> view iterateGenKnapsack
@@ -652,14 +661,7 @@ top10Lists = prettyPrintPop 10 testProblem10items popG100
       Item 58.53 9.21 ]) ]
 
 ```
-**An aside**: before using the `Remote` ability, we could run our GA like this:
-
-**Another aside**: no `IO` was used in this code 😀.
-
-```
---popG10 = Random.splitmix seed '(runNgenerations runGeneration testProblem10items 3 (Left 30))
-
-```
+**An aside**: no `IO` was used in this code 😀
 
 ## Appendix
 

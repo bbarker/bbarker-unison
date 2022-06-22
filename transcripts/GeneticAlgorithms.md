@@ -24,11 +24,11 @@ This is not a formal or complete classification!
 
 ### Genetic Algorithms
 
-- The most common form of evolutionary algorithm (EA)
+- The most common form of evolutionary algorithm (EA).
 - A sequence of "base pairs" (e.g. numbers) represent a
-solution to the problem
-- The "DNA" is genetically manipulated
-- Commonly used for optimization, compared to some other EAs.
+solution to the problem.
+- The "DNA" is genetically manipulated.
+- GAs are commonly used for optimization, compared to some other EAs.
 - ***Requires many function evaluations, which may be expensive***.
 - **A distributed variant would be ideal in this case**
 
@@ -43,11 +43,10 @@ solution to the problem
 
 [![Depiction of the Knapsack Problem](/media/Knapsack.svg)](https://commons.wikimedia.org/wiki/File:Knapsack.svg)
 
-There are many approaches to solve this, including approaches that guarantee
-a global optimum; these methods tend to be specialized for the Knapsack problem,
-whereas GAs are much broader in scope.
-
-Regardless, we can use the Knapsack problem as an example.
+- There are many approaches to solve this.
+- Some specialized approaches that guarantee a global optimum.
+- GAs are much broader in scope.
+- Regardless, we can use the Knapsack problem as an example.
 
 First, we model an `Item`, which has a weight and a value:
 
@@ -55,17 +54,20 @@ First, we model an `Item`, which has a weight and a value:
 .uniopt.evo.genetic.ex.knapsack> view Item
 ```
 
-We also need a way to keep track of all the items we are considering putting in our
-knapsack. We choose a `Map`, as well as a reversed variant of the `Map` for convenience
+- We need a way to keep track of all items under consideration.
+knapsack.
+- We can use a `Map`, as well as an inverted `Map`.
 
 ```ucm
 .uniopt.evo.genetic.ex.knapsack> view PossibleItems
 .uniopt.evo.genetic.ex.knapsack> view PossibleItemsRev
 ```
 
-We create an entire problem description as a value of a structural type
-which includes possible items and the weight limit, and
-create a constructor to help us generate `PossibleItemsRev`:
+The problem description includes:
+  - The two maps
+  - The weight limit
+
+We also have a constructor to help us create `PossibleItemsRev`:
 
 ```ucm
 .uniopt.evo.genetic.ex.knapsack> view KnapsackProblem

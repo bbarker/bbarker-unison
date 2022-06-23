@@ -19,25 +19,45 @@ The code is written as a
 [Unison transcript](https://www.unison-lang.org/learn/tooling/transcripts/),
 and is evaluated based on the most recent version of `UniOpt` stored on GitHub.
 
-# Introduction
+# Introduction and Overview
 
-## Optimization
+- I used to use optimization algorithms to find solutions
+  - (to biological problems)
+- In my case, I was limited to running these on a single system.
+- After seeing Unison's distributed computing capabilities, I thought:
+  - I should try a distributed algorithm in Unison
+  - A relatively simple, flexible, and distributed-friendly algorithm I've used before
+  - Also Unison is fun
 
+---
+- We'll talk about:Genetic Algorithms (GAs)
+  - Where they fit
+  - What they do
+  - An example problem (the Knapsack Problem)
+  - An implementation in Unison
+  - How we make it distributed friendly
+  - And show an example run
 ## Algorithms requiring Optimization
 
-## Types of Optimization algorithms
+ - AI/ML
+ - Scheduling
+ - Routing
+ - Cost Savings
+ - Parameter tuning (this is where I used a GA previously)
+## Genetic Algorithms
 
-This is not a formal or complete classification!
-
-### Genetic Algorithms
+- There are many types of optimization algorithms
+  - Beyond the scope of this presentation
 
 - The most common form of evolutionary algorithm (EA).
 - A sequence of "base pairs" (e.g. numbers) represent a
 solution to the problem.
 - The "DNA" is genetically manipulated.
 - GAs are commonly used for optimization, compared to some other EAs.
+- Attempts to find a global optima, but there is typically no guarantee.
 - ***Requires many function evaluations, which may be expensive***.
-- **A distributed variant would be ideal in this case**
+  - Both in the # of evaluations, and the length of each evaluation.
+  - **A distributed variant would be ideal in this case**
 
 
 ## An Example Problem: The Knapsack Problem
@@ -52,8 +72,7 @@ solution to the problem.
 
 - There are many approaches to solve this.
 - Some specialized approaches that guarantee a global optimum.
-- GAs are much broader in scope.
-- Regardless, we can use the Knapsack problem as an example.
+- Regardless, we can use the Knapsack problem as an example for a GA.
 
 First, we model an `Item`, which has a weight and a value:
 
@@ -430,8 +449,8 @@ To do this:
        ->{Remote, Random} [#d8v7354nh6]
 
 ```
-- Use the distribute package's `Seq` data structure in place of `List`:
-  - We can do this internally, and still use `List` in the function signature.
+Let's take a look at the implementation:
+
 
 ```ucm
 .uniopt.evo.genetic> view iterateGenDefault
@@ -474,6 +493,9 @@ To do this:
         <| sortBy fitness (Set.toList pastAndPresentPop))
 
 ```
+- Use the [distributed project](https://share.unison-lang.org/latest/namespaces/unison/distributed)'s
+   `Seq` data structure in place of `List`:
+  - We can do this internally, and still use `List` in the function signature.
 - Note also that we use the `Parallel` mode
   - So if the fitness function is also parallel,
     it can fork multiple Unison processes
@@ -663,7 +685,16 @@ top10Lists = prettyPrintPop 10 testProblem10items popG100
 ```
 **An aside**: no `IO` was used in this code 😀
 
-## Appendix
+
+# Acknowledgements
+ - Unison Community (for answering questions)
+  - Rebecca Mark
+  - Rúnar Bjarnason
+  - Paul Chiusano
+  - and others!
+ - Charad Sheerajin (for giving feedback on the talk and transcript)
+
+# Appendix
 
 Developed using the following:
 

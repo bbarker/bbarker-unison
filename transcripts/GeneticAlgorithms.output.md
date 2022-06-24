@@ -55,6 +55,8 @@ solution to the problem.
 - The "DNA" is genetically manipulated.
 - GAs are commonly used for optimization, compared to some other EAs.
 - Attempts to find a global optima, but there is typically no guarantee.
+[![2D depiction of local and global optima](/media/Extrema_example_original.svg)](https://en.wikipedia.org/wiki/Maxima_and_minima#/media/File:Extrema_example_original.svg)
+
 - ***Requires many function evaluations, which may be expensive***.
   - Both in the # of evaluations, and the length of each evaluation.
   - **A distributed variant would be ideal in this case**
